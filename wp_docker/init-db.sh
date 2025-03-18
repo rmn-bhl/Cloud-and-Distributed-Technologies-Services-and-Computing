@@ -1,19 +1,42 @@
 #!/bin/bash
-if [ "$MYSQL_INTERNAL" = "true" ]; then
-    service mysql start
 
-    # Перевіряємо, чи БД вже ініціалізована
-    if [ ! -d "/var/lib/mysql/wordpress" ]; then
-        mysql -u root -e "CREATE DATABASE wordpress;"
-        mysql -u root -e "CREATE USER 'wordpress'@'%' IDENTIFIED BY 'password';"
-        mysql -u root -e "GRANT ALL PRIVILEGES ON wordpress.* TO 'wordpress'@'%';"
-        mysql -u root -e "FLUSH PRIVILEGES;"
+# Якщо змінна MYSQL_ROOT_PASSWORD не передана - беремо значення за замовчуванням
+MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
 
-        # Імпортуємо початковий SQL, якщо потрібно
-        if [ -f /var/www/html/initial_db.sql ]; then
-            mysql -u root wordpress < /var/www/html/initial_db.sql
-        fi
+echo "Перевіряємо, чи потрібно ініціалізувати базу даних..."
+
+# Цикл очікування, поки MySQL (db) не стане доступним
+until mysql -h db -u root -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1" &>/dev/null; do
+    echo "Очікуємо запуск MySQL..."
+    sleep 2
+done
+
+echo "База даних доступна, продовжуємо..."
+
+# Перевіряємо, чи є таблиця wp_options у базі wordpress
+TABLE_EXISTS=$(mysql -h db -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE wordpress; SHOW TABLES LIKE 'wp_options';" 2>/dev/null | grep "wp_options" | wc -l)
+
+if [ "$TABLE_EXISTS" -eq 0 ]; then
+    echo "Таблиці WordPress відсутні. Створюємо..."
+    # Створюємо базу, якщо її немає
+    mysql -h db -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS wordpress;"
+    # Створюємо користувача, якщо він не існує
+    mysql -h db -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS 'wordpress'@'%' IDENTIFIED BY 'password';"
+    # Надаємо всі права
+    mysql -h db -u root -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON wordpress.* TO 'wordpress'@'%';"
+    mysql -h db -u root -p"$MYSQL_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;"
+
+    # Якщо існує дамп initial_db.sql, імпортуємо його
+    if [ -f /var/www/html/initial_db.sql ]; then
+        echo "Імпортуємо початкові дані..."
+        mysql -h db -u root -p"$MYSQL_ROOT_PASSWORD" --binary-mode=1 wordpress < /var/www/html/initial_db.sql
+        echo "Імпорт завершено!"
+    else
+        echo "Файл дампу initial_db.sql не знайдено, пропускаємо імпорт."
     fi
+else
+    echo "Таблиці WordPress вже існують, пропускаємо створення."
 fi
 
+echo "Ініціалізація завершена!"
 exec "$@"

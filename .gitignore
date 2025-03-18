@@ -1,0 +1,50 @@
+# Ігноруємо директорію з даними бази в папці wp_docker
+wp_docker/data/
+
+# Файли середовища, що можуть містити конфіденційну інформацію
+.env
+*.env
+
+# Лог-файли
+*.log
+
+# Файли, створені операційною системою
+.DS_Store
+Thumbs.db
+
+# Локальні конфігурації docker (якщо використовуєте override)
+docker-compose.override.yml
+
+# Ignore thumbnails created by Windows
+Thumbs.db
+
+# Ignore files built by Visual Studio
+*.obj
+*.exe
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+[Bb]in/
+[Dd]ebug*/
+[Rr]elease*/
+*.lib
+*.sbr
+obj/
+_ReSharper*/
+[Tt]est[Rr]esult*
+.vs/
+.idea/
+
+# NuGet packages folder
+packages/
