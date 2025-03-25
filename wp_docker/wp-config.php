@@ -4,7 +4,8 @@ define( 'DB_USER', getenv('WORDPRESS_DB_USER') ?: 'wordpress' );
 define( 'DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: 'password' );
 
 $db_host = getenv('WORDPRESS_DB_HOST') ?: 'db';
-define('DB_HOST', $db_host);
+$db_port = getenv('WORDPRESS_DB_PORT') ?: '3306';
+define('DB_HOST', $db_host . ':' . $db_port);
 
 define('AUTH_KEY',         'your-auth-key');
 define('SECURE_AUTH_KEY',  'your-secure-auth-key');
