@@ -48,3 +48,4 @@ _ReSharper*/
 
 # NuGet packages folder
 packages/
+*.tar

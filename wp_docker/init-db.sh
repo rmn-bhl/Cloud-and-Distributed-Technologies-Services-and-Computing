@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Якщо змінна MYSQL_ROOT_PASSWORD не передана - беремо значення за замовчуванням
+# Якщо змінна MYSQL_ROOT_PASSWORD не передана,то беремо значення за замовчуванням
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
 
 echo "Перевіряємо, чи потрібно ініціалізувати базу даних..."
