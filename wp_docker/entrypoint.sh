@@ -3,10 +3,25 @@ set -e
 
 if [ "$USE_INTERNAL_DB" = "true" ]; then
     echo "Start MariaDB in the background..."
+    #mkdir -p /run/mysqld
+    #chown -R mysql:mysql /run/mysqld
+
     mysqld_safe --datadir=/var/lib/mysql --bind-address=0.0.0.0 &
 
-    echo "Waiting for MariaDB to start..."
-    sleep 10
+    echo "Waiting for MariaDB to become available..."
+    for i in {1..30}; do
+        if mysqladmin ping -uroot --silent; then
+            echo "MariaDB is up!"
+            break
+        fi
+        echo "MariaDB not ready yet... ($i)"
+        sleep 2
+    done
+
+    if ! mysqladmin ping -uroot --silent; then
+        echo "MariaDB failed to start"
+        exit 1
+    fi
 
     echo "Setting root password for MariaDB..."
     mysqladmin -u root password rootpass || true
@@ -22,11 +37,6 @@ if [ "$USE_INTERNAL_DB" = "true" ]; then
         echo "Creating WordPress DB user '${WORDPRESS_DB_USER}'@'%'..."
         mysql -uroot -prootpass --protocol=tcp -e "CREATE USER IF NOT EXISTS '${WORDPRESS_DB_USER}'@'%' IDENTIFIED BY '${WORDPRESS_DB_PASSWORD}';"
         mysql -uroot -prootpass --protocol=tcp -e "GRANT ALL PRIVILEGES ON ${WORDPRESS_DB_NAME}.* TO '${WORDPRESS_DB_USER}'@'%';"
-        mysql -uroot -prootpass --protocol=tcp -e "FLUSH PRIVILEGES;"
-
-        echo "Creating additional user 'wordpress'@'%' for MySQL Workbench (optional)..."
-        mysql -uroot -prootpass --protocol=tcp -e "CREATE USER IF NOT EXISTS 'wordpress'@'%' IDENTIFIED BY 'password';"
-        mysql -uroot -prootpass --protocol=tcp -e "GRANT ALL PRIVILEGES ON ${WORDPRESS_DB_NAME}.* TO 'wordpress'@'%';"
         mysql -uroot -prootpass --protocol=tcp -e "FLUSH PRIVILEGES;"
 
         if [ -f /init-db.sql ]; then
